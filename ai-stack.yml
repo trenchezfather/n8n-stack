@@ -1,0 +1,35 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama_data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - internal
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    restart: unless-stopped
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - openwebui_data:/app/backend/data
+    labels:
+      caddy: ${OPENWEBUI_DOMAIN}
+      caddy.reverse_proxy: "{{upstreams 8080}}"
+    networks:
+      - internal
+
+volumes:
+  ollama_data:
+  openwebui_data:
+
+networks:
+  internal:
+    name: vps_internal
+    external: true
